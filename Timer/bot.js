@@ -38,9 +38,9 @@ function CountDownTimer(index, id, time, channelID){
             counter--;
             delete timers[index];
         }
-        time--;
+        time -= 60;
         t = time;
-    }, 1000);
+    }, 60000);
     this.stopInterval = function(){
         bot.sendMessage({
             to: channelID,
