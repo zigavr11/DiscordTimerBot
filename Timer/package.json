@@ -1,0 +1,11 @@
+{
+  "name": "Timer",
+  "version": "1.0.0",
+  "description": "Timer",
+  "main": "bot.js",
+  "author": "Žiga Vodušek Resnik",
+  "dependencies": {
+    "discord.io": "^2.5.2",
+    "winston": "^2.3.1"
+  }
+}
