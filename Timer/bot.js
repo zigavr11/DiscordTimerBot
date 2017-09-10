@@ -51,9 +51,16 @@ function CountDownTimer(index, id, time, channelID){
         delete timers[index];
     }
     this.checkCountDown = function(){
+        var time  = t;
+        var hours = Math.floor(time / 3600);
+        time -= hours * 3600;
+        var minutes = Math.floor(time / 60);
+        time -= minutes * 60;
+        var seconds = time;
+
         bot.sendMessage({
             to: channelID,
-            message: '```Timer for ' + this.id + ' is at ' + t +  '.```'
+            message: '```Time until ' + this.id + ' expires is: ' + hours + 'h ' + minutes + 'min ' + seconds + 's' +  '.```'
         });
     }
     this.getTime = function(){
@@ -64,6 +71,8 @@ function CountDownTimer(index, id, time, channelID){
 bot.on('message', function (user, userID, channelID, message, evt) {
     if (message.substring(0, 1) == '!') {
         var args = message.substring(1).split(' ');
+        if(args[0] == 't')
+            args[0] = 'timer';
         var timerExists = false;
         switch(args[0]) {
             // !ping
@@ -96,7 +105,10 @@ wrongTemplateCheck = function(args){
     var none = true;
     for(var i = 0; i < args.length; i++){
         switch(args[i]){
-            case 'start': if(counter > 4) return "```You cannot add any more timers, because the maximum ammount of timers are active.```" ;else return "```Wrong template! Example: !timer Ziga start 10```"; break;
+            case 'start': 
+                if(counter > 4) return "```You cannot add any more timers, because the maximum ammount of timers are active.```" ;
+                else return "```Wrong template! Example: !timer Ziga start 10 or 12:09```"; 
+            break;
             case 'stop': return "```Wrong template! Example: !timer Ziga stop```"; break;
             case 'check': return "```Wrong template! Example: !timer Ziga check```"; break;
             case 'active': return "```Wrong template! Example: !timer active```"; break;
@@ -126,15 +138,23 @@ startTimer = function(args, channelID){
         }
         else{
             var time = args[3].split(':');
-            var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
-            var until = (time[0] * 3600) + (time[1] * 60);
-            var timer = (until - now);
-            if(timer < 0)
-            {
-                timer =+ (24 * 3600);
+            if(time[0] < 0 || time[0] > 23 || time[1] < 0 || time[1] > 59){
+                bot.sendMessage({
+                    to: channelID,
+                    message: '```Wrong time input!```'
+                });
             }
-            timers[counter] = new CountDownTimer(counter, args[1], timer, channelID);    
-            counter++;
+            else{
+                var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
+                var until = (time[0] * 3600) + (time[1] * 60);
+                var timer = (until - now);
+                if(timer < 0)
+                {
+                    timer =+ (24 * 3600);
+                }
+                timers[counter] = new CountDownTimer(counter, args[1], timer, channelID);    
+                counter++;
+            }
         }
     }
 }
@@ -175,7 +195,7 @@ timerCommands = function(args, channelID, command){
 helpTimer = function(channelID){
     bot.sendMessage({
         to: channelID,
-        message:  '```Legend:\n\tId -> Name of the timer (without spaces)\n\tTime -> It can be in seconds or a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "id" start "time"\n\tTo stop a timer:\n\t\t!timer "id" stop\n\tTo check a timer:\n\t\t!timer "id" check\n\tTo output all active timers:\n\t\t!timer active\nInfo:\nThere can be maximum to five timers active at the same time.```'
+        message:  '```Info:\n\tThere can be maximum to five timers active at the same time.\n\tYou can write !t instead of !timer\nLegend:\n\tId -> Name of the timer (without spaces)\n\tTime -> Can be in seconds or in a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "id" start "time"\n\tTo stop a timer:\n\t\t!timer "id" stop\n\tTo check a timer:\n\t\t!timer "id" check\n\tTo output all active timers:\n\t\t!timer active\n```'
     });
 }
 
