@@ -1,7 +1,11 @@
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('./auth.json');
+var test = require('./test.js');
 
+if(test.ime == 'ziga'){
+    var i = 'p';
+}
 var timers = [];
 var counter = 0;
 // Configure logger settings
@@ -63,9 +67,8 @@ function CountDownTimer(index, id, time, channelID){
 bot.on('message', function (user, userID, channelID, message, evt) {
     if (message.substring(0, 1) == '!') {
         var args = message.substring(1).split(' ');
-        var cmd = args[0];
         var timerExists = false;
-        switch(cmd) {
+        switch(args[0]) {
             // !ping
             case 'timer':
                 if(args.length == 4 && args[2] == 'start'){
@@ -85,20 +88,14 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                         }
                         else{
                             var time = args[3].split(':');
-                            //var now = new Date().getTime();
-                            var now = new Date((new Date()).getFullYear(), (new Date()).getMonth(), (new Date()).getDay(), (new Date()).getHours(), (new Date()).getMinutes(), (new Date()).getSeconds(), (new Date()).getMilliseconds()).getTime();
-                            var until = new Date((new Date()).getFullYear(), (new Date()).getMonth(), (new Date()).getDay(), time[0], time[1], 0, 0).getTime();
+                            var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
+                            var until = (time[0] * 3600) + (time[1] * 60);
                             var timer = (until - now);
                             if(timer < 0)
                             {
-                                var until = new Date((new Date()).getFullYear(), (new Date()).getMonth(), (new Date()).getDay() + 1, time[0], time[1], 0, 0).getTime();
-                                var timer = (until - now);
+                                timer =+ (24 * 3600);
                             }
-                            var hours = Math.floor((timer % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                            var minutes = Math.floor((timer % (1000 * 60 * 60)) / (1000 * 60));
-                            var seconds = Math.floor((timer % (1000 * 60)) / 1000);
-                            seconds += (hours * 3600) + (minutes * 60);
-                            timers[counter] = new CountDownTimer(counter, args[1], seconds, channelID);    
+                            timers[counter] = new CountDownTimer(counter, args[1], timer, channelID);    
                             counter++;
                         }
                     }
@@ -134,6 +131,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                     }
                 }
                 else if(args.length == 2 && args[1] == 'help'){
+                    test();
                     bot.sendMessage({
                         to: channelID,
                         message:  '```Template: \n \t !timer "id" "command" "time" \n Commands: \n  \tstart: Starts a new timer specified by name \n \t stop: Stops the specific timer \n \t check: Checks the specific timer \n Id: \n \tSpecifies the name of the timer, and its used to stop or check a timer. \n Time: \n \tHow long is the timer \n!timer active: \n \tDisplays all active timers.\n```'
@@ -170,3 +168,19 @@ bot.on('message', function (user, userID, channelID, message, evt) {
      }
 });
 
+function startTimer(){
+
+}
+
+function stopTimer(){
+
+}
+
+function checkTimer(){
+
+}
+
+function test(){
+    var i = "0";
+    var j = "1";
+}
