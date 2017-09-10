@@ -1,11 +1,7 @@
 var Discord = require('discord.io');
 var logger = require('winston');
 var auth = require('./auth.json');
-var test = require('./test.js');
 
-if(test.ime == 'ziga'){
-    var i = 'p';
-}
 var timers = [];
 var counter = 0;
 // Configure logger settings
@@ -64,6 +60,7 @@ function CountDownTimer(index, id, time, channelID){
         return time;
     }
 }
+
 bot.on('message', function (user, userID, channelID, message, evt) {
     if (message.substring(0, 1) == '!') {
         var args = message.substring(1).split(' ');
@@ -71,95 +68,22 @@ bot.on('message', function (user, userID, channelID, message, evt) {
         switch(args[0]) {
             // !ping
             case 'timer':
-                if(args.length == 4 && args[2] == 'start'){
-                    for(var i = 0; i < counter; i++){
-                        if(timers[i].id == args[1]){
-                            timerExists = true;
-                            bot.sendMessage({
-                                to: channelID,
-                                message: '```Timer already exists!```'
-                            });
-                        }    
-                    }
-                    if(!timerExists){
-                        if(args[3].search(':') == -1){
-                            timers[counter] = new CountDownTimer(counter, args[1], args[3], channelID);    
-                            counter++;
-                        }
-                        else{
-                            var time = args[3].split(':');
-                            var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
-                            var until = (time[0] * 3600) + (time[1] * 60);
-                            var timer = (until - now);
-                            if(timer < 0)
-                            {
-                                timer =+ (24 * 3600);
-                            }
-                            timers[counter] = new CountDownTimer(counter, args[1], timer, channelID);    
-                            counter++;
-                        }
-                    }
+                if(counter < 5 && args.length == 4 && args[2].toLowerCase() == 'start'){
+                    startTimer(args, channelID);
                 }
-                else if(args.length == 3 && args[2] == 'stop'){
-                    if(counter < 1){
-                        bot.sendMessage({
-                            to: channelID,
-                            message:  '```No active timers!```'
-                        });
-                    }
-                    else{
-                        for(var i = 0; i < counter; i++){
-                            if(timers[i].id == args[1]){
-                                timers[i].stopInterval();
-                            }
-                        }
-                    }
+                else if(args.length == 3 && (args[2].toLowerCase() == 'stop' || args[2].toLowerCase() == 'check')){
+                    timerCommands(args, channelID, args[2]);
                 }
-                else if(args.length == 3 && args[2] == 'check'){
-                    if(counter < 1){
-                        bot.sendMessage({
-                            to: channelID,
-                            message:  '```No active timers!```'
-                        });
-                    }
-                    else{
-                        for(var i = 0; i < counter; i++){
-                            if(timers[i].id == args[1]){
-                                timers[i].checkCountDown();
-                            }
-                        }
-                    }
+                else if(args.length == 2 && args[1].toLowerCase() == 'help'){
+                    helpTimer(channelID);
                 }
-                else if(args.length == 2 && args[1] == 'help'){
-                    test();
-                    bot.sendMessage({
-                        to: channelID,
-                        message:  '```Template: \n \t !timer "id" "command" "time" \n Commands: \n  \tstart: Starts a new timer specified by name \n \t stop: Stops the specific timer \n \t check: Checks the specific timer \n Id: \n \tSpecifies the name of the timer, and its used to stop or check a timer. \n Time: \n \tHow long is the timer \n!timer active: \n \tDisplays all active timers.\n```'
-                    });
-                }
-                else if(args.length == 2 && args[1] == 'active'){
-                    if(counter > 0){
-                        var output = '```**Id**\t\t**Time**\n';
-                        for(var i = 0; i < counter; i++){
-                            output += '\n' + timers[i].id + "\t\t" + timers[i].getTime();
-                        }
-                        output += '```';
-                        bot.sendMessage({
-                            to: channelID,
-                            message: output
-                        });
-                    }
-                    else{
-                        bot.sendMessage({
-                            to: channelID,
-                            message: '```No active timers.```'
-                        });
-                    }
+                else if(args.length == 2 && args[1].toLowerCase() == 'active'){
+                    activeTimers(channelID);
                 }
                 else{
                     bot.sendMessage({
                         to: channelID,
-                        message: '```Wrong template! It is suppose to look like this:\n!timer Ziga start 10```'
+                        message: wrongTemplateCheck(args)
                     });
                 }
                 break;
@@ -168,19 +92,109 @@ bot.on('message', function (user, userID, channelID, message, evt) {
      }
 });
 
-function startTimer(){
-
+wrongTemplateCheck = function(args){
+    var none = true;
+    for(var i = 0; i < args.length; i++){
+        switch(args[i]){
+            case 'start': if(counter > 4) return "```You cannot add any more timers, because the maximum ammount of timers are active.```" ;else return "```Wrong template! Example: !timer Ziga start 10```"; break;
+            case 'stop': return "```Wrong template! Example: !timer Ziga stop```"; break;
+            case 'check': return "```Wrong template! Example: !timer Ziga check```"; break;
+            case 'active': return "```Wrong template! Example: !timer active```"; break;
+            case 'help': return "```Wrong template! Example: !timer help```"; break;
+        }
+    }
+    if(none){
+        return "```Wrong template! To start a timer, it should look like this: !timer Ziga start 10```";
+    }
 }
 
-function stopTimer(){
-
+startTimer = function(args, channelID){
+    var timerExists = false;
+    for(var i = 0; i < counter; i++){
+        if(timers[i].id == args[1]){
+            timerExists = true;
+            bot.sendMessage({
+                to: channelID,
+                message: '```Timer already exists!```'
+            });
+        }    
+    }
+    if(!timerExists){
+        if(args[3].search(':') == -1){
+            timers[counter] = new CountDownTimer(counter, args[1], args[3], channelID);    
+            counter++;
+        }
+        else{
+            var time = args[3].split(':');
+            var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
+            var until = (time[0] * 3600) + (time[1] * 60);
+            var timer = (until - now);
+            if(timer < 0)
+            {
+                timer =+ (24 * 3600);
+            }
+            timers[counter] = new CountDownTimer(counter, args[1], timer, channelID);    
+            counter++;
+        }
+    }
 }
 
-function checkTimer(){
-
+timerCommands = function(args, channelID, command){
+    var timerExists = false;
+    if(counter < 1){
+        bot.sendMessage({
+            to: channelID,
+            message:  '```No active timers!```'
+        });
+    }
+    else{
+        for(var i = 0; i < counter; i++){
+            if(timers[i].id == args[1]){
+                switch(command){
+                    case 'stop':
+                        timers[i].stopInterval();
+                        timerExists = true;
+                    break;
+                    case 'check':
+                        timers[i].checkCountDown();
+                        timerExists = true;
+                    break;
+                }
+                break;
+            }
+        }
+        if(!timerExists){
+            bot.sendMessage({
+                to: channelID,
+                message:  '```Timer with that id does not exist!```'
+            });
+        }
+    }
 }
 
-function test(){
-    var i = "0";
-    var j = "1";
+helpTimer = function(channelID){
+    bot.sendMessage({
+        to: channelID,
+        message:  '```Legend:\n\tId -> Name of the timer (without spaces)\n\tTime -> It can be in seconds or a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "id" start "time"\n\tTo stop a timer:\n\t\t!timer "id" stop\n\tTo check a timer:\n\t\t!timer "id" check\n\tTo output all active timers:\n\t\t!timer active\nInfo:\nThere can be maximum to five timers active at the same time.```'
+    });
+}
+
+activeTimers = function(channelID){
+    if(counter > 0){
+        var output = '```Id\tTime\n';
+        for(var i = 0; i < counter; i++){
+            output += '\n' + timers[i].id + "\t" + timers[i].getTime();
+        }
+        output += '```';
+        bot.sendMessage({
+            to: channelID,
+            message: output
+        });
+    }
+    else{
+        bot.sendMessage({
+            to: channelID,
+            message: '```No active timers.```'
+        });
+    }
 }
