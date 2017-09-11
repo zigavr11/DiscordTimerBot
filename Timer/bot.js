@@ -30,7 +30,7 @@ function CountDownTimer(index, id, t, channelID, startingTime){
         to: channelID,
         message: '```Timer for ' + this.id + ' started.```'
     });
-    var x = setInterval( function(){ countDown() } , 20000);
+    var x = setInterval( function(){ countDown() } , 60000);
 
     this.stopInterval = function(){
         bot.sendMessage({
@@ -219,7 +219,7 @@ timerCommands = function(args, channelID, command){
 helpTimer = function(channelID){
     bot.sendMessage({
         to: channelID,
-        message:  '```Info:\n\tThere can be maximum to five timers active at the same time.\n\tYou can write !t instead of !timer\nLegend:\n\tId -> Name of the timer (without spaces)\n\tTime -> Can be in seconds or in a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "id" start "time"\n\tTo stop a timer:\n\t\t!timer "id" stop\n\tTo check a timer:\n\t\t!timer "id" check\n\tTo output all active timers:\n\t\t!timer active\n```'
+        message:  '```Info:\n\tThere can be a maximum of five timers active at the same time.\n\tYou can write !t instead of !timer\nLegend:\n\tName -> Name of the timer (without spaces)\n\tTime -> Can be in seconds or in a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "name" start "time"\n\tTo stop a timer:\n\t\t!timer "name" stop\n\tTo check a timer:\n\t\t!timer "name" check\n\tTo output all active timers:\n\t\t!timer active\n```'
     });
 }
 
@@ -249,7 +249,7 @@ activeTimers = function(channelID){
         catch(e){
             bot.sendMessage({
                 to: channelID,
-                message: '```ERROR! ( Some sort of error happened that I did not feel like fixing :D )```'
+                message: '```ERROR! ( Some sort of error happened that I did not feel like fixing )```'
             });
         }
         
