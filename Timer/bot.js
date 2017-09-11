@@ -21,26 +21,17 @@ bot.on('ready', function (evt) {
     logger.info(bot.username + ' - (' + bot.id + ')');
 });
 
-function CountDownTimer(index, id, time, channelID){
+
+function CountDownTimer(index, id, t, channelID, startingTime){
     this.id = id;
-    var t;
+    var time = t;
+    this.startTime = startingTime;
     bot.sendMessage({
         to: channelID,
         message: '```Timer for ' + this.id + ' started.```'
     });
-    var x = setInterval(function(){
-        if (time < 0) {
-            bot.sendMessage({
-                to: channelID,
-                message: '@here ```It is time for ' + id + '!```'
-            });
-            clearInterval(x);
-            counter--;
-            delete timers[index];
-        }
-        time -= 60;
-        t = time;
-    }, 60000);
+    var x = setInterval( function(){ countDown() } , 60000);
+
     this.stopInterval = function(){
         bot.sendMessage({
             to: channelID,
@@ -51,20 +42,49 @@ function CountDownTimer(index, id, time, channelID){
         delete timers[index];
     }
     this.checkCountDown = function(){
-        var time  = t;
-        var hours = Math.floor(time / 3600);
-        time -= hours * 3600;
-        var minutes = Math.floor(time / 60);
-        time -= minutes * 60;
-        var seconds = time;
+        time = time - (((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds() - this.startTime);
+        this.startTime = (new Date().getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
+
+        var tempTime = time;
+        var hours = Math.floor(tempTime / 3600);
+        tempTime -= hours * 3600;
+        var minutes = Math.floor(tempTime / 60);
+        tempTime -= minutes * 60;
+        var seconds = tempTime;
 
         bot.sendMessage({
             to: channelID,
             message: '```Time until ' + this.id + ' expires is: ' + hours + 'h ' + minutes + 'min ' + seconds + 's' +  '.```'
         });
     }
+    this.updateCountDown = function(){
+        time = time - (((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds() - this.startTime);
+        this.startTime = (new Date().getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
+        if (time < 0) {
+            bot.sendMessage({
+                to: channelID,
+                message: '@here ```It is time for ' + id + '!```'
+            });
+            clearInterval(x);
+            counter--;
+            delete timers[index];
+        }
+    }
     this.getTime = function(){
         return time;
+    }
+
+    function countDown(){
+        time -= 60;
+        if (time < 0) {
+            bot.sendMessage({
+                to: channelID,
+                message: '@here ```It is time for ' + id + '!```'
+            });
+            clearInterval(x);
+            counter--;
+            delete timers[index];
+        }
     }
 }
 
@@ -80,7 +100,7 @@ bot.on('message', function (user, userID, channelID, message, evt) {
                 if(counter < 5 && args.length == 4 && args[2].toLowerCase() == 'start'){
                     startTimer(args, channelID);
                 }
-                else if(args.length == 3 && (args[2].toLowerCase() == 'stop' || args[2].toLowerCase() == 'check')){
+                else if(args.length > 2 && (args[2].toLowerCase() == 'stop' || args[2].toLowerCase() == 'check' || args[2].toLowerCase() == 'update')){
                     timerCommands(args, channelID, args[2]);
                 }
                 else if(args.length == 2 && args[1].toLowerCase() == 'help'){
@@ -132,8 +152,9 @@ startTimer = function(args, channelID){
         }    
     }
     if(!timerExists){
+        var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
         if(args[3].search(':') == -1){
-            timers[counter] = new CountDownTimer(counter, args[1], args[3], channelID);    
+            timers[counter] = new CountDownTimer(counter, args[1], args[3], channelID, now);    
             counter++;
         }
         else{
@@ -145,14 +166,13 @@ startTimer = function(args, channelID){
                 });
             }
             else{
-                var now = ((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
                 var until = (time[0] * 3600) + (time[1] * 60);
                 var timer = (until - now);
                 if(timer < 0)
                 {
                     timer =+ (24 * 3600);
                 }
-                timers[counter] = new CountDownTimer(counter, args[1], timer, channelID);    
+                timers[counter] = new CountDownTimer(counter, args[1], timer, channelID, now);    
                 counter++;
             }
         }
@@ -176,7 +196,11 @@ timerCommands = function(args, channelID, command){
                         timerExists = true;
                     break;
                     case 'check':
-                        timers[i].checkCountDown();
+                        timers[i].checkCountDown(timers[i].startTime);
+                        timerExists = true;
+                    break;
+                    case 'update':
+                        timers[i].updateCountDown(args[3]);
                         timerExists = true;
                     break;
                 }
@@ -195,26 +219,45 @@ timerCommands = function(args, channelID, command){
 helpTimer = function(channelID){
     bot.sendMessage({
         to: channelID,
-        message:  '```Info:\n\tThere can be maximum to five timers active at the same time.\n\tYou can write !t instead of !timer\nLegend:\n\tId -> Name of the timer (without spaces)\n\tTime -> Can be in seconds or in a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "id" start "time"\n\tTo stop a timer:\n\t\t!timer "id" stop\n\tTo check a timer:\n\t\t!timer "id" check\n\tTo output all active timers:\n\t\t!timer active\n```'
+        message:  '```Info:\n\tThere can be a maximum of five timers active at the same time.\n\tYou can write !t instead of !timer\nLegend:\n\tName -> Name of the timer (without spaces)\n\tTime -> Can be in seconds or in a specific time: 100 or 10:10\nTemplates:\n\tTo start a timer:\n\t\t!timer "name" start "time"\n\tTo stop a timer:\n\t\t!timer "name" stop\n\tTo check a timer:\n\t\t!timer "name" check\n\tTo output all active timers:\n\t\t!timer active\n```'
     });
 }
 
 activeTimers = function(channelID){
+    //updateTime
     if(counter > 0){
         var output = '```Id\tTime\n';
-        for(var i = 0; i < counter; i++){
-            output += '\n' + timers[i].id + "\t" + timers[i].getTime();
+        try{
+            for(var i = 0; i < counter; i++){
+                timers[i].updateCountDown();
+
+                var tempTime = timers[i].getTime();
+                var hours = Math.floor(tempTime / 3600);
+                tempTime -= hours * 3600;
+                var minutes = Math.floor(tempTime / 60);
+                tempTime -= minutes * 60;
+                var seconds = tempTime;
+
+                output += '\n' + timers[i].id + "\t" + hours + 'h ' + minutes + 'min ' + seconds + 's';
+            }
+            output += '```';
+            bot.sendMessage({
+                to: channelID,
+                message: output
+            });
         }
-        output += '```';
-        bot.sendMessage({
-            to: channelID,
-            message: output
-        });
+        catch(e){
+            bot.sendMessage({
+                to: channelID,
+                message: '```ERROR! ( Some sort of error happened that I did not feel like fixing )```'
+            });
+        }
+        
     }
     else{
         bot.sendMessage({
             to: channelID,
-            message: '```No active timers.```'
+            message: '```No active timers!```'
         });
     }
 }
