@@ -24,8 +24,8 @@ bot.on('ready', function (evt) {
 
 function CountDownTimer(index, id, t, channelID, startingTime){
     this.id = id;
-    var time = t;
     this.startTime = startingTime;
+    var time = t;
     bot.sendMessage({
         to: channelID,
         message: '```Timer for ' + this.id + ' started.```'
@@ -37,24 +37,22 @@ function CountDownTimer(index, id, t, channelID, startingTime){
             to: channelID,
             message: '```Timer for ' + this.id + ' has been canceled.```'
         });
-        clearInterval(x);
         counter--;
+        clearInterval(x);
         delete timers[index];
     }
     this.checkCountDown = function(){
-        time = time - (((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds() - this.startTime);
-        this.startTime = (new Date().getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
+        this.updateCountDown();
 
         var tempTime = time;
         var hours = Math.floor(tempTime / 3600);
         tempTime -= hours * 3600;
         var minutes = Math.floor(tempTime / 60);
         tempTime -= minutes * 60;
-        var seconds = tempTime;
 
         bot.sendMessage({
             to: channelID,
-            message: '```Time until ' + this.id + ' expires is: ' + hours + 'h ' + minutes + 'min ' + seconds + 's' +  '.```'
+            message: '```Time until ' + this.id + ' expires is: ' + hours + 'h ' + minutes + 'min ' + tempTime + 's' +  '.```'
         });
     }
     this.updateCountDown = function(){
@@ -236,9 +234,8 @@ activeTimers = function(channelID){
                 tempTime -= hours * 3600;
                 var minutes = Math.floor(tempTime / 60);
                 tempTime -= minutes * 60;
-                var seconds = tempTime;
 
-                output += '\n' + timers[i].id + "\t" + hours + 'h ' + minutes + 'min ' + seconds + 's';
+                output += '\n' + timers[i].id + "\t" + hours + 'h ' + minutes + 'min ' + tempTime + 's';
             }
             output += '```';
             bot.sendMessage({
