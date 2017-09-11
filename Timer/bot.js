@@ -21,16 +21,17 @@ bot.on('ready', function (evt) {
     logger.info(bot.username + ' - (' + bot.id + ')');
 });
 
-
-function CountDownTimer(index, id, t, channelID, startingTime){
+function CountDownTimer(index, id, time, channelID, startingTime){
     this.id = id;
     this.startTime = startingTime;
-    var time = t;
+    this.time = time;
+
     bot.sendMessage({
         to: channelID,
         message: '```Timer for ' + this.id + ' started.```'
     });
-    var x = setInterval( function(){ countDown() } , 60000);
+
+    var x = setTimeout( function(){ finished() }, time * 1000);
 
     this.stopInterval = function(){
         bot.sendMessage({
@@ -38,13 +39,12 @@ function CountDownTimer(index, id, t, channelID, startingTime){
             message: '```Timer for ' + this.id + ' has been canceled.```'
         });
         counter--;
-        clearInterval(x);
+        clearTimeout(x);
         delete timers[index];
     }
+   
     this.checkCountDown = function(){
-        this.updateCountDown();
-
-        var tempTime = time;
+        var tempTime = this.getCurrentTime();
         var hours = Math.floor(tempTime / 3600);
         tempTime -= hours * 3600;
         var minutes = Math.floor(tempTime / 60);
@@ -55,34 +55,23 @@ function CountDownTimer(index, id, t, channelID, startingTime){
             message: '```Time until ' + this.id + ' expires is: ' + hours + 'h ' + minutes + 'min ' + tempTime + 's' +  '.```'
         });
     }
-    this.updateCountDown = function(){
-        time = time - (((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds() - this.startTime);
+    this.getCurrentTime = function(){
+        this.time = this.time - (((new Date()).getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds() - this.startTime);
         this.startTime = (new Date().getHours() * 3600) + ((new Date()).getMinutes() * 60) + (new Date()).getSeconds();
-        if (time < 0) {
-            bot.sendMessage({
-                to: channelID,
-                message: '@here ```It is time for ' + id + '!```'
-            });
-            clearInterval(x);
-            counter--;
-            delete timers[index];
-        }
+        return this.time;
     }
     this.getTime = function(){
-        return time;
+        return this.time;
     }
 
-    function countDown(){
-        time -= 60;
-        if (time < 0) {
-            bot.sendMessage({
-                to: channelID,
-                message: '@here ```It is time for ' + id + '!```'
-            });
-            clearInterval(x);
-            counter--;
-            delete timers[index];
-        }
+    function finished(){
+        bot.sendMessage({
+            to: channelID,
+            message: '@here ```It is time for ' + id + '!```'
+        });
+        clearTimeout(x);
+        counter--;
+        delete timers[index];
     }
 }
 
@@ -227,7 +216,7 @@ activeTimers = function(channelID){
         var output = '```Id\tTime\n';
         try{
             for(var i = 0; i < counter; i++){
-                timers[i].updateCountDown();
+                timers[i].getCurrentTime();
 
                 var tempTime = timers[i].getTime();
                 var hours = Math.floor(tempTime / 3600);
